@@ -84,47 +84,46 @@ def index():
                     'Erro': 'опечатка'
                     }
         word = form.input_word.data.strip()
+        form.input_word.data = word.capitalize()
         morph = pymorphy3.MorphAnalyzer().parse(word)
-        flag = False
-        if word.isalpha():
-            parsers = [i for i in morph if all(
-                [True if j not in ["Surn", "Name", "Patr", "UNKN", "Slng"] else False for j in
-                 str(i.tag).replace(" ", ",").split(",")])]
-            for q, k in enumerate(parsers):
-                if len(k.methods_stack) == 1 and str(k.methods_stack[0][0]) == "DictionaryAnalyzer()":
-                    parser = str(k.tag).replace(" ", ",").split(",")
-                    s = [tag_dict[j] for j in parser if j in tag_dict]
-                    s.insert(1, f"н.ф - {k.normal_form}")
+        parsers = [i for i in morph if all(
+            [True if j not in ["Surn", "Name", "Patr", "UNKN", "Slng"] else False for j in
+             str(i.tag).replace(" ", ",").split(",")])]
+        for q, k in enumerate(parsers):
+            if len(k.methods_stack) == 1 and str(k.methods_stack[0][0]) == "DictionaryAnalyzer()":
+                parser = str(k.tag).replace(" ", ",").split(",")
+                s = [tag_dict[j] for j in parser if j in tag_dict]
+                s.insert(1, f"н.ф - {k.normal_form}")
 
-                    if "существительное" in s:
-                        noun = pymorphy3.MorphAnalyzer().parse(k.normal_form)[0]
+                if "существительное" in s:
+                    noun = pymorphy3.MorphAnalyzer().parse(k.normal_form)[0]
 
-                        if (noun.tag.gender == "femn" or noun.tag.gender == "masc") and (
-                                noun.word.endswith("а") or noun.word.endswith("я")):
-                            s.append("I склонение")
-                        elif noun.tag.gender == "masc" or (
-                                noun.tag.gender == "neut" and (noun.word.endswith("о") or noun.word.endswith("е"))):
-                            s.append("II склонение")
-                        elif noun.tag.gender == "femn" and noun.word.endswith("ь"):
-                            s.append("III склонение")
+                    if (noun.tag.gender == "femn" or noun.tag.gender == "masc") and (
+                            noun.word.endswith("а") or noun.word.endswith("я")):
+                        s.append("I склонение")
+                    elif noun.tag.gender == "masc" or (
+                            noun.tag.gender == "neut" and (noun.word.endswith("о") or noun.word.endswith("е"))):
+                        s.append("II склонение")
+                    elif noun.tag.gender == "femn" and noun.word.endswith("ь"):
+                        s.append("III склонение")
 
-                    elif "глагол" in s:
-                        normal_form = k.normal_form
-                        if normal_form.endswith(("ся", "сь")):
-                            s.append("возвратный")
-                            normal_form = normal_form[:-2]
-                        verb = pymorphy3.MorphAnalyzer().parse(normal_form)[0]
+                elif "глагол" in s:
+                    normal_form = k.normal_form
+                    if normal_form.endswith(("ся", "сь")):
+                        s.append("возвратный")
+                        normal_form = normal_form[:-2]
+                    verb = pymorphy3.MorphAnalyzer().parse(normal_form)[0]
 
-                        if (verb.word.endswith("ить") or verb.word in (
-                                "держать", "зависеть", "терпеть", "слышать", "смотреть", "обидеть", "видеть", "дышать",
-                                "ненавидеть", "вертеть", "гнать")) and verb.word not in ("брить", "стелить"):
-                            s.append("II спряжение")
-                        else:
-                            s.append("I спряжение")
-                    analyzes.append(", ".join(s))
-                    flag = True
-        if not word.isalpha() or not flag:
-            form.input_word.errors.append("Некорректный ввод")
+                    if (verb.word.endswith("ить") or verb.word in (
+                            "держать", "зависеть", "терпеть", "слышать", "смотреть", "обидеть", "видеть", "дышать",
+                            "ненавидеть", "вертеть", "гнать")) and verb.word not in ("брить", "стелить"):
+                        s.append("II спряжение")
+                    else:
+                        s.append("I спряжение")
+                analyzes.append(", ".join(s))
+            else:
+                form.input_word.errors.append("Некорректный ввод")
+                break
     return render_template("index.html", form=form, title="Главная", analyzes=analyzes)
 
 
