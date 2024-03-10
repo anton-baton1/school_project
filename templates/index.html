@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!--    {% if analyzes.length == 1 %}-->
+<!--        <div>-->
+<!--            <textarea class="form-control" disabled>{{ analyzes.first() }}</textarea>-->
+<!--        </div>-->
+<!--    {% else %}-->
+        {% for i in analyzes %}
+            <div>
+                <span class="h4">{{ loop.index }}</span>
+                <textarea class="form-control" disabled><{{ i }}</textarea>
+            </div><br>
+        {% endfor %}
+<!--    {% endif %}-->
+{% endblock %}
