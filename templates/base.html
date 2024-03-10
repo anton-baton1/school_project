@@ -12,32 +12,18 @@
             crossorigin="anonymous"></script>
 </head>
 <body>
-    <nav class="navbar" data-bs-theme="dark">
-
-    </nav>
-    <div class="px-5">
-        <form class="d-flex" method="post" novalidate>
-            {{ form.hidden_tag() }}
-            {{ form.input_word(class="form-control me-2") }}
-            {{ form.submit(class="btn btn-outline-success") }}
-        </form>
-        {% for error in form.input_word.errors %}
-            <br><div class="alert alert-danger" role="alert">
-                {{ error }}
-            </div>
-        {% endfor %}
-        {% if analyzes | length == 1 %}
-            <br><div>
-                <textarea class="form-control" disabled>{{ analyzes[0] }}</textarea>
+    <nav class="navbar bg-dark" data-bs-theme="dark">
+        {% if current_user.is_authenticated %}
+            <div class="navbar-text">
+                <a href="/logout">{{ current_user.name }}</a>
             </div>
         {% else %}
-            {% for i in analyzes %}
-                <div>
-                    <span class="h4">{{ loop.index }}</span>
-                    <textarea class="form-control" disabled>{{ i }}</textarea>
-                </div><br>
-            {% endfor %}
+            <div class="navbar-text">
+                <a class="btn btn-primary " href="/register">Зарегистрироваться</a>
+                <a class="btn btn-success" href="/login">Войти</a>
+            </div>
         {% endif %}
-    </div>
+    </nav>
+    {% block content %} {% endblock %}
 </body>
 </html>

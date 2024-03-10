@@ -1,14 +1,23 @@
-from flask import Flask, render_template, request
 import pymorphy3
+from flask import Flask, render_template, redirect
+from flask_login import LoginManager
+
+from data import db_session
+from data.users import User
 from forms.analyze_form import AnalyzeForm
+from forms.register_form import RegisterForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
+login_manager = LoginManager()
+login_manager.init_app(app)
+db_session.global_init("db/blogs.db")
 
 
-# login_manager = LoginManager()
-# login_manager.init_app(app)
-# db_session.global_init("db/blogs.db")
+@login_manager.user_loader
+def load_user(user_id):
+    db_sess = db_session.create_session()
+    return db_sess.query(User).get(user_id)
 
 
 @app.route("/", methods=["POST", "GET"])
@@ -115,7 +124,28 @@ def index():
                     flag = True
         if not word.isalpha() or not flag:
             form.input_word.errors.append("Некорректный ввод")
-    return render_template("base.html", form=form, title="qwe", analyzes=analyzes)
+    return render_template("index.html", form=form, title="Главная", analyzes=analyzes)
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    db_sess = db_session.create_session()
+    form = RegisterForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        repeat_password = form.repeat_password.data
+        if db_sess.query(User.email == email).first():
+            form.email.errors.append("Пользователь с этой почтой уже существует")
+        if password != repeat_password:
+            form.repeat_password.errors.append("Пароли не совпадают")
+        if not db_sess.query(User.email == email).first() and password == repeat_password:
+            new_user = User(email=email)
+            new_user.set_password(password)
+            db_sess.add(new_user)
+            db_sess.commit()
+            return redirect("/")
+    return render_template("register.html", form=form, title="Регистрация")
 
 
 if __name__ == '__main__':
