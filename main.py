@@ -12,7 +12,6 @@ app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
 
 @app.route("/", methods=["POST", "GET"])
-@app.route("/index", methods=["POST", "GET"])
 def index():
     form = AnalyzeForm()
     analyzes = []
