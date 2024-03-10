@@ -1,6 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, IntegerField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField
 
 
 class AnalyzeForm(FlaskForm):

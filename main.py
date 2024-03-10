@@ -23,8 +23,6 @@ def load_user(user_id):
 
 @app.route("/", methods=["POST", "GET"])
 def index():
-    # print(current_user.is_authenticated)
-    # print(current_user.id)
     form = AnalyzeForm()
     analyzes = []
     if form.validate_on_submit():
