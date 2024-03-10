@@ -1,10 +1,11 @@
 import pymorphy3
 from flask import Flask, render_template, redirect
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 
 from data import db_session
 from data.users import User
 from forms.analyze_form import AnalyzeForm
+from forms.login_form import LoginForm
 from forms.register_form import RegisterForm
 
 app = Flask(__name__)
@@ -22,6 +23,8 @@ def load_user(user_id):
 
 @app.route("/", methods=["POST", "GET"])
 def index():
+    # print(current_user.is_authenticated)
+    # print(current_user.id)
     form = AnalyzeForm()
     analyzes = []
     if form.validate_on_submit():
@@ -129,24 +132,53 @@ def index():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    db_sess = db_session.create_session()
     form = RegisterForm()
     if form.validate_on_submit():
-        email = form.email.data
-        password = form.password.data
-        repeat_password = form.repeat_password.data
-        if db_sess.query(User.email == email).first():
+        db_sess = db_session.create_session()
+        if db_sess.query(User).filter(User.email == form.email.data).first():
             form.email.errors.append("Пользователь с этой почтой уже существует")
-        if password != repeat_password:
+        if form.password.data != form.repeat_password.data:
             form.repeat_password.errors.append("Пароли не совпадают")
-        if not db_sess.query(User.email == email).first() and password == repeat_password:
-            new_user = User(email=email)
-            new_user.set_password(password)
+        if not db_sess.query(User).filter(
+                User.email == form.email.data).first() and form.password.data == form.repeat_password.data:
+            new_user = User(email=form.email.data)
+            new_user.set_password(form.password.data)
             db_sess.add(new_user)
             db_sess.commit()
-            return redirect("/")
+            return redirect("/login")
     return render_template("register.html", form=form, title="Регистрация")
 
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect("/")
+    form = LoginForm()
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(User.email == form.email.data).first()
+        if not user:
+            form.login_email.errors.append("Пользователь не найден")
+        elif not user.check_password(form.password.data):
+            form.password.errors.append("Неверный пароль")
+        else:
+            login_user(user)
+            return redirect("/")
+    return render_template("login.html", form=form, title="Вход")
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
+
+
 if __name__ == '__main__':
+    db_sess = db_session.create_session()
+    user = User(email="q")
+    user.set_password("q")
+    db_sess.add(user)
+    db_sess.commit()
+
     app.run(port=9999)
