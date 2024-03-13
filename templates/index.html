@@ -4,7 +4,7 @@
 <div class="px-5">
         <form class="d-flex" id="input" method="post" novalidate>
             {{ form.hidden_tag() }}
-            {{ form.input_word(class="form-control me-2 mt-2") }}
+            {{ form.input_word(class="form-control me-2 mt-2", placeholder="Введите слово") }}
             {{ form.submit(class="btn btn-outline-success mt-2") }}
         </form>
         {% for error in form.input_word.errors %}
@@ -25,6 +25,4 @@
             {% endfor %}
         {% endif %}
     </div>
-</body>
-</html>
 {% endblock %}

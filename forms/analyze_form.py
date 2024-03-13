@@ -3,5 +3,5 @@ from wtforms import StringField, SubmitField
 
 
 class AnalyzeForm(FlaskForm):
-    input_word = StringField("")
+    input_word = StringField()
     submit = SubmitField("Разобрать")
