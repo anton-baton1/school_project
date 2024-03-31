@@ -23,6 +23,13 @@
                 <a class="btn btn-outline-light" href="/login">Войти</a>
             </div>
         {% endif %}
+        <div class="pe-5">
+            {% if request.path == "/test" %}
+                <a class="btn btn-outline-light" href="/">На главную</a>
+            {% else %}
+                <a class="btn btn-outline-light" href="/test">Тест</a>
+            {% endif %}
+        </div>
     </nav>
     {% block content %} {% endblock %}
 </body>

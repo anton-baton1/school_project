@@ -1,5 +1,7 @@
+from random import choice
+
 import pymorphy3
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, request
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 
 from data import db_session
@@ -14,6 +16,76 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 db_session.global_init("db/blogs.db")
 
+tag_dict = {'NOUN': 'существительное',
+            'ADJF': 'полное прилагательное',
+            'ADJS': 'краткое прилагательное',
+            'COMP': 'компаратив',
+            'VERB': 'глагол',
+            'INFN': 'глагол',
+            'PRTF': 'полное причастие',
+            'PRTS': 'краткое причастие',
+            'GRND': 'деепричастие',
+            'NUMR': 'числительное',
+            'ADVB': 'наречие',
+            'NPRO': 'местоимение',
+            'PRED': 'предикатив',
+            'PREP': 'предлог',
+            'CONJ': 'союз',
+            'PRCL': 'частица',
+            'INTJ': 'междометие',
+            'anim': 'одушевлённое',
+            'inan': 'неодушевлённое',
+            'masc': 'мужской род',
+            'femn': 'женский род',
+            'neut': 'средний род',
+            'ms-f': 'общий род',
+            'sing': 'единственное число',
+            'plur': 'множественное число',
+            'Sgtm': 'единственное число',
+            'Pltm': 'множественное число',
+            'Fixd': 'неизменяемое',
+            'nomn': 'именительный падеж',
+            'gent': 'родительный падеж',
+            'datv': 'дательный падеж',
+            'accs': 'винительный падеж',
+            'ablt': 'творительный падеж',
+            'loct': 'предложный падеж',
+            'Supr': 'превосходная степень',
+            'Qual': 'качественное',
+            'Anum': 'порядковое',
+            'Poss': 'притяжательное',
+            'perf': 'совершенный вид',
+            'impf': 'несовершенный вид',
+            'tran': 'переходный',
+            'intr': 'непереходный',
+            'Impe': 'безличный',
+            'Refl': 'возвратный',
+            '1per': '1-ое лицо',
+            '2per': '2-ое лицо',
+            '3per': '3-е лицо',
+            'pres': 'настоящее время',
+            'past': 'прошедшее время',
+            'futr': 'будущее время',
+            'indc': 'изъявительное наклонение',
+            'impr': 'повелительное наклонение',
+            'actv': 'действительный залог',
+            'pssv': 'страдательный залог',
+            'Coll': 'собирательное'
+            }
+signs_dict = {
+    "POS": ["часть речи", 'NOUN', 'ADJF', 'ADJS', 'COMP', 'VERB', 'INFN', 'PRTF', 'PRTS',
+            'GRND', 'NUMR', 'ADVB', 'NPRO', 'PRED', 'PREP', 'CONJ', 'PRCL', 'INTJ'],
+    "animacy": ["одушевлённость", "anim", "inan"],
+    "aspect": ["вид", "perf", "impf"],
+    "case": ["падеж", "nomn", "gent", "datv", "accs", "ablt", "loct"],
+    "gender": ["род", "masc", "femn", "neut", "ms-f"],
+    "mood": ["наклонение", "indc", "impr"],
+    "number": ["число", "sing", "plur", "Sgtm", "Pltm"],
+    "person": ["лицо", "1per", "2per", "3per"],
+    "tense": ["время", "pres", "past", "futr"],
+    "transitivity": ["переходность", "tran", "intr"],
+    "voice": ["залог", "actv", "pssv"]}
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -26,68 +98,11 @@ def index():
     form = AnalyzeForm()
     analyzes = []
     if form.validate_on_submit():
-        tag_dict = {'NOUN': 'существительное',
-                    'ADJF': 'полное прилагательное',
-                    'ADJS': 'краткое прилагательное',
-                    'COMP': 'компаратив',
-                    'VERB': 'глагол',
-                    'INFN': 'глагол',
-                    'PRTF': 'полное причастие',
-                    'PRTS': 'краткое причастие',
-                    'GRND': 'деепричастие',
-                    'NUMR': 'числительное',
-                    'ADVB': 'наречие',
-                    'NPRO': 'местоимение',
-                    'PRED': 'предикатив',
-                    'PREP': 'предлог',
-                    'CONJ': 'союз',
-                    'PRCL': 'частица',
-                    'INTJ': 'междометие',
-                    'anim': 'одушевлённое',
-                    'inan': 'неодушевлённое',
-                    'masc': 'мужской род',
-                    'femn': 'женский род',
-                    'neut': 'средний род',
-                    'ms-f': 'общий род',
-                    'sing': 'единственное число',
-                    'plur': 'множественное число',
-                    'Sgtm': 'единственное число',
-                    'Pltm': 'множественное число',
-                    'Fixd': 'неизменяемое',
-                    'nomn': 'именительный падеж',
-                    'gent': 'родительный падеж',
-                    'datv': 'дательный падеж',
-                    'accs': 'винительный падеж',
-                    'ablt': 'творительный падеж',
-                    'loct': 'предложный падеж',
-                    'Supr': 'превосходная степень',
-                    'Qual': 'качественное',
-                    'Anum': 'порядковое',
-                    'Poss': 'притяжательное',
-                    'perf': 'совершенный вид',
-                    'impf': 'несовершенный вид',
-                    'tran': 'переходный',
-                    'intr': 'непереходный',
-                    'Impe': 'безличный',
-                    'Refl': 'возвратный',
-                    '1per': '1-ое лицо',
-                    '2per': '2-ое лицо',
-                    '3per': '3-е лицо',
-                    'pres': 'настоящее время',
-                    'past': 'прошедшее время',
-                    'futr': 'будущее время',
-                    'indc': 'изъявительное наклонение',
-                    'impr': 'повелительное наклонение',
-                    'actv': 'действительный залог',
-                    'pssv': 'страдательный залог',
-                    'Coll': 'собирательное',
-                    'Erro': 'опечатка'
-                    }
         word = form.input_word.data.strip()
         form.input_word.data = word.capitalize()
         morph = pymorphy3.MorphAnalyzer().parse(word)
         parsers = [i for i in morph if all(
-            [True if j not in ["Surn", "Name", "Patr", "UNKN", "Slng"] else False for j in
+            [True if j not in ["Surn", "Name", "Patr", "UNKN", "Slng", "Erro"] else False for j in
              str(i.tag).replace(" ", ",").split(",")])]
         for q, k in enumerate(parsers):
             if len(k.methods_stack) == 1 and str(k.methods_stack[0][0]) == "DictionaryAnalyzer()":
@@ -120,6 +135,10 @@ def index():
                         s.append("II спряжение")
                     else:
                         s.append("I спряжение")
+
+                elif "компаратив" in s:
+                    s[0] = "прилагательное"
+                    s.append("сравнительная степень")
                 analyzes.append(", ".join(s))
             else:
                 form.input_word.errors.append("Некорректный ввод")
@@ -169,6 +188,74 @@ def login():
 def logout():
     logout_user()
     return redirect("/")
+
+
+@app.route("/test", methods=["GET", "POST"])
+def test():
+    test_word = choice([i.word for i in pymorphy3.MorphAnalyzer().parse(choice(
+        ["полить", "красивый", "машина", "лампа", "построить", "когда", "вечер", "зелёный", "металлический"]))[
+        0].lexeme])
+    parsers = [i for i in pymorphy3.MorphAnalyzer().parse(test_word) if all(
+        [True if j not in ["Surn", "Name", "Patr"] else False for j in str(i.tag).replace(" ", ",").split(",")])]
+    signs = ["POS"]
+    for i in parsers:
+        if i.tag.animacy and "animacy" not in signs:
+            signs.append("animacy")
+        if i.tag.aspect and "aspect" not in signs:
+            signs.append("aspect")
+        if i.tag.case and "case" not in signs:
+            signs.append("case")
+        if i.tag.gender and "gender" not in signs:
+            signs.append("gender")
+        if i.tag.mood and "mood" not in signs:
+            signs.append("mood")
+        if i.tag.number and "number" not in signs:
+            signs.append("number")
+        if i.tag.person and "person" not in signs:
+            signs.append("person")
+        if i.tag.tense and "tense" not in signs:
+            signs.append("tense")
+        if i.tag.transitivity and "transitivity" not in signs:
+            signs.append("transitivity")
+        if i.tag.voice and "voice" not in signs:
+            signs.append("voice")
+    sign = choice(signs)
+    params = {"word": test_word,
+              "sign": signs_dict[sign][0],
+              "variants": list(dict.fromkeys([tag_dict[j].capitalize() for j in signs_dict[sign][1:] if
+                                              j not in ("COMP", "PREP", "CONJ", "PRCL", "INTJ")])),
+              "title": "Тест"}
+
+    if request.method == "POST":
+        ...
+        # print(request.form["answer"])
+        # answer = request.form.get("answer")
+        # if not answer:
+        #     print()
+        # else:
+        #     for k in self.parsers:
+        #         if eval(f"k.tag.{self.sign}"):
+        #             if self.answer_variants.currentText() == self.tag_dict[eval(f"k.tag.{self.sign}")]:
+        #                 self.test_result = 1
+        #                 break
+        #     self.answer_btn.setStyleSheet(
+        #         "color:#CCCCCC;background:#1D334A;border-radius:15px;font-family:'Object Sans Heavy';")
+        #     self.answer_btn.setEnabled(False)
+        #     if self.user_ID:
+        #         date, time = str(datetime.datetime.now().date()), str(datetime.datetime.now().time()).split(".")[0]
+        #         self.data_base.cursor().execute(
+        #             "INSERT INTO tests(user_ID, test_word, test_result, date, time) VALUES(?, ?, ?, ?, ?)",
+        #             (self.user_ID, self.test_word, self.test_result, date, time,))
+        #         self.data_base.connection().commit()
+        #     if self.test_result:
+        #         self.answer_label.setText("ПРАВИЛЬНЫЙ ОТВЕТ")
+        #         self.answer_label.setStyleSheet("background:#003566;color:#FFD60A;border-radius:10px")
+        #     else:
+        #         self.answer_label.setText("НЕПРАВИЛЬНЫЙ ОТВЕТ")
+        #         self.answer_label.setStyleSheet("background:#000814;color:#FFC300;border-radius:10px")
+        #     self.test_result = 0
+
+    return render_template("test.html", **params)
 
 
 if __name__ == '__main__':
