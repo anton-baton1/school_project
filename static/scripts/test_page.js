@@ -2,6 +2,7 @@ document.querySelector("#answer-btn").addEventListener('click', (e) => {
     const answer = e.target.parentNode.querySelector('input[name="answer"]:checked').value;
     const answer_div = document.querySelector("#answer-div");
     const next_btn = document.querySelector("#next");
+    const get_results = document.querySelector("#get-results");
 
     let xhr = new XMLHttpRequest();
     xhr.open("POST", 'http://127.0.0.1:9999/check_answer/');
@@ -25,6 +26,7 @@ document.querySelector("#answer-btn").addEventListener('click', (e) => {
             }
             answer_div.hidden = false;
             next_btn.disabled = false;
+            get_results.disabled = false;
             e.target.disabled = true;
         }
         else {
@@ -35,4 +37,8 @@ document.querySelector("#answer-btn").addEventListener('click', (e) => {
 
 document.querySelector("#next").addEventListener('click', (e) => {
     location.href = 'http://127.0.0.1:9999/test/';
+})
+
+document.querySelector("#get-results").addEventListener('click', (e) => {
+    location.href = 'http://127.0.0.1:9999/test_results/';
 })

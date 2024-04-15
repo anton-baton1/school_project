@@ -11,9 +11,10 @@
                 {% endfor %}
                 <br><div class="alert" id="answer-div" hidden></div>
                 <input class="btn btn-outline-dark" id="answer-btn" value="Ответить" type="button">
-                <input type="button" class="btn btn-outline-dark ms-1" value="Далее" id="next" disabled><br>
-                <script src="{{ url_for('static', filename='scripts/check_answer.js') }}"></script>
+                <input type="button" class="btn btn-outline-dark ms-1" value="Далее" id="next" disabled>
             </form>
+            <input type="button" class="btn btn-outline-dark my-2" value="Узнать результаты" id="get-results" disabled>
         </div>
+        <script src="{{ url_for('static', filename='scripts/test_page.js') }}"></script>
     </div>
 {% endblock %}

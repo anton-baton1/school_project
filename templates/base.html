@@ -14,7 +14,7 @@
     <nav class="navbar bg-dark bg-body-tertiary" data-bs-theme="dark">
         {% if current_user.is_authenticated %}
             <div class="ps-5">
-                <a class="link-light" href="/logout">{{ current_user.email }}</a>
+                <a class="link-light fs-5" href="/logout">{{ current_user.email }}</a>
             </div>
         {% else %}
             <div class="ps-5">
@@ -23,10 +23,10 @@
             </div>
         {% endif %}
         <div class="pe-5">
-            {% if request.path == "/test" %}
+            {% if request.path == "/test/" %}
                 <a class="btn btn-outline-light" href="/">На главную</a>
             {% else %}
-                <a class="btn btn-outline-light" href="/test">Тест</a>
+                <a class="btn btn-outline-light" href="/test/">Тест</a>
             {% endif %}
         </div>
     </nav>

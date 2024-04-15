@@ -5,6 +5,7 @@ from flask import Flask, render_template, redirect, request, jsonify
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 
 from data import db_session
+from data.tests import Test
 from data.users import User
 from forms.analyze_form import AnalyzeForm
 from forms.login_form import LoginForm
@@ -227,20 +228,42 @@ def test():
               "variants": list(dict.fromkeys([tag_dict[j].capitalize() for j in signs_dict[sign][1:] if
                                               j not in ("COMP", "PREP", "CONJ", "PRCL", "INTJ", "PRED")])),
               "title": "Тест"}
+    if current_user.is_authenticated:
+        db_sess = db_session.create_session()
+        new_test = Test(user_id=current_user.id, test_word=test_word, test_sign=signs_dict[sign][0])
+        db_sess.add(new_test)
+        db_sess.commit()
     return render_template("test.html", **params)
 
 
 @app.route("/check_answer/", methods=["POST"])
 def check_answer():
     correct_answers = set()
+    status = "wrong"
     for k in parsers:
         if eval(f"k.tag.{sign}"):
             correct_answer = tag_dict[eval(f"k.tag.{sign}")]
             correct_answers.add(correct_answer)
             if request.json["answer"].lower() == correct_answer or (request.json["answer"].lower() in (
-            "полное прилагательное", "краткое прилагательное") and correct_answers == "компаратив"):
-                return jsonify(status="ok", correct_answers=list(correct_answers))
-    return jsonify(status="wrong", correct_answers=list(correct_answers))
+                    "полное прилагательное", "краткое прилагательное") and correct_answers == "компаратив"):
+                status = "ok"
+                break
+    if current_user.is_authenticated:
+        db_sess = db_session.create_session()
+        test = db_sess.query(Test).all()[-1]
+        test.test_completed = True if status == "ok" else False
+        db_sess.commit()
+    return jsonify(status=status, correct_answers=list(correct_answers))
+
+
+@login_required
+@app.route("/test_results/", methods=["GET"])
+def test_results():
+    db_sess = db_session.create_session()
+    user_tests = db_sess.query(Test).filter(Test.user_id == current_user.id, Test.test_completed != None).all()
+    completed_tests = db_sess.query(Test).filter(Test.user_id == current_user.id, Test.test_completed).all()
+    return render_template("test_results.html", user_tests=user_tests, completed_tests=completed_tests,
+                           title="Результаты теста")
 
 
 if __name__ == '__main__':
