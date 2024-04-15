@@ -2,27 +2,27 @@
 
 {% block content %}
 <div class="px-5">
-        <form class="d-flex" id="input" method="post" novalidate>
-            {{ form.hidden_tag() }}
-            {{ form.input_word(class="form-control me-2 mt-2", placeholder="Введите слово") }}
-            {{ form.submit(class="btn btn-outline-success mt-2") }}
-        </form>
-        {% for error in form.input_word.errors %}
-            <br><div class="alert alert-danger" role="alert">
-                {{ error }}
+    <form class="d-flex" id="input" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        {{ form.input_word(class="form-control me-2 mt-2", placeholder="Введите слово") }}
+        {{ form.submit(class="btn btn-outline-success mt-2") }}
+    </form>
+    {% for error in form.input_word.errors %}
+        <br><div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    {% endfor %}
+    {% if analyzes | length == 1 %}
+        <br><div>
+            <textarea class="form-control" disabled>{{ analyzes[0] }}</textarea>
+        </div>
+    {% else %}
+        {% for i in analyzes %}
+            <br><div>
+                <span class="h4">{{ loop.index }}</span>
+                <textarea class="form-control" disabled>{{ i }}</textarea>
             </div>
         {% endfor %}
-        {% if analyzes | length == 1 %}
-            <br><div>
-                <textarea class="form-control" disabled>{{ analyzes[0] }}</textarea>
-            </div>
-        {% else %}
-            {% for i in analyzes %}
-                <div>
-                    <span class="h4">{{ loop.index }}</span>
-                    <textarea class="form-control" disabled>{{ i }}</textarea>
-                </div><br>
-            {% endfor %}
-        {% endif %}
-    </div>
+    {% endif %}
+</div>
 {% endblock %}

@@ -2,14 +2,17 @@
 
 {% block content %}
     <div class="px-5 py-3">
-        <span class="h3">Выберите {{ sign }} для слова {{ word }}</span><br>
+        <span class="fs-3">Выберите <b>{{ sign }}</b> для слова <b>{{ word }}</b></span><br>
         <div class="px-3 py-2">
             <form method="post">
                 {% for i in variants %}
                     <input type="radio" name="answer" value="{{ i }}" class="form-check-input">
                     <span class="form-check-label">{{ i }}</span><br>
                 {% endfor %}
-                <br><button class="btn btn-outline-dark" type="submit">Ответить</button>
+                <br><div class="alert" id="answer-div" hidden></div>
+                <input class="btn btn-outline-dark" id="answer-btn" value="Ответить" type="button">
+                <input type="button" class="btn btn-outline-dark ms-1" value="Далее" id="next" disabled><br>
+                <script src="{{ url_for('static', filename='scripts/check_answer.js') }}"></script>
             </form>
         </div>
     </div>

@@ -1,7 +1,7 @@
 from random import choice
 
 import pymorphy3
-from flask import Flask, render_template, redirect, request
+from flask import Flask, render_template, redirect, request, jsonify
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 
 from data import db_session
@@ -11,7 +11,7 @@ from forms.login_form import LoginForm
 from forms.register_form import RegisterForm
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
+app.config['SECRET_KEY'] = 'school_secret_key'
 login_manager = LoginManager()
 login_manager.init_app(app)
 db_session.global_init("db/blogs.db")
@@ -101,9 +101,8 @@ def index():
         word = form.input_word.data.strip()
         form.input_word.data = word.capitalize()
         morph = pymorphy3.MorphAnalyzer().parse(word)
-        parsers = [i for i in morph if all(
-            [True if j not in ["Surn", "Name", "Patr", "UNKN", "Slng", "Erro"] else False for j in
-             str(i.tag).replace(" ", ",").split(",")])]
+        parsers = [i for i in morph if all([j not in ["Surn", "Name", "Patr", "UNKN", "Slng", "Erro"] for j in
+                                            str(i.tag).replace(" ", ",").split(",")]) and i.score >= 0.2]
         for q, k in enumerate(parsers):
             if len(k.methods_stack) == 1 and str(k.methods_stack[0][0]) == "DictionaryAnalyzer()":
                 parser = str(k.tag).replace(" ", ",").split(",")
@@ -143,10 +142,12 @@ def index():
             else:
                 form.input_word.errors.append("Некорректный ввод")
                 break
+        if not parsers:
+            form.input_word.errors.append("Некорректный ввод")
     return render_template("index.html", form=form, title="Главная", analyzes=analyzes)
 
 
-@app.route("/register", methods=["GET", "POST"])
+@app.route("/register/", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
@@ -165,7 +166,7 @@ def register():
     return render_template("register.html", form=form, title="Регистрация")
 
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login/", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
         return redirect("/")
@@ -183,15 +184,16 @@ def login():
     return render_template("login.html", form=form, title="Вход")
 
 
-@app.route('/logout')
+@app.route('/logout/')
 @login_required
 def logout():
     logout_user()
     return redirect("/")
 
 
-@app.route("/test", methods=["GET", "POST"])
+@app.route("/test/", methods=["GET", "POST"])
 def test():
+    global parsers, sign
     test_word = choice([i.word for i in pymorphy3.MorphAnalyzer().parse(choice(
         ["полить", "красивый", "машина", "лампа", "построить", "когда", "вечер", "зелёный", "металлический"]))[
         0].lexeme])
@@ -223,46 +225,24 @@ def test():
     params = {"word": test_word,
               "sign": signs_dict[sign][0],
               "variants": list(dict.fromkeys([tag_dict[j].capitalize() for j in signs_dict[sign][1:] if
-                                              j not in ("COMP", "PREP", "CONJ", "PRCL", "INTJ")])),
+                                              j not in ("COMP", "PREP", "CONJ", "PRCL", "INTJ", "PRED")])),
               "title": "Тест"}
-
-    if request.method == "POST":
-        ...
-        # print(request.form["answer"])
-        # answer = request.form.get("answer")
-        # if not answer:
-        #     print()
-        # else:
-        #     for k in self.parsers:
-        #         if eval(f"k.tag.{self.sign}"):
-        #             if self.answer_variants.currentText() == self.tag_dict[eval(f"k.tag.{self.sign}")]:
-        #                 self.test_result = 1
-        #                 break
-        #     self.answer_btn.setStyleSheet(
-        #         "color:#CCCCCC;background:#1D334A;border-radius:15px;font-family:'Object Sans Heavy';")
-        #     self.answer_btn.setEnabled(False)
-        #     if self.user_ID:
-        #         date, time = str(datetime.datetime.now().date()), str(datetime.datetime.now().time()).split(".")[0]
-        #         self.data_base.cursor().execute(
-        #             "INSERT INTO tests(user_ID, test_word, test_result, date, time) VALUES(?, ?, ?, ?, ?)",
-        #             (self.user_ID, self.test_word, self.test_result, date, time,))
-        #         self.data_base.connection().commit()
-        #     if self.test_result:
-        #         self.answer_label.setText("ПРАВИЛЬНЫЙ ОТВЕТ")
-        #         self.answer_label.setStyleSheet("background:#003566;color:#FFD60A;border-radius:10px")
-        #     else:
-        #         self.answer_label.setText("НЕПРАВИЛЬНЫЙ ОТВЕТ")
-        #         self.answer_label.setStyleSheet("background:#000814;color:#FFC300;border-radius:10px")
-        #     self.test_result = 0
-
     return render_template("test.html", **params)
+
+
+@app.route("/check_answer/", methods=["POST"])
+def check_answer():
+    correct_answers = set()
+    for k in parsers:
+        if eval(f"k.tag.{sign}"):
+            correct_answer = tag_dict[eval(f"k.tag.{sign}")]
+            correct_answers.add(correct_answer)
+            if request.json["answer"].lower() == correct_answer or (request.json["answer"].lower() in (
+            "полное прилагательное", "краткое прилагательное") and correct_answers == "компаратив"):
+                return jsonify(status="ok", correct_answers=list(correct_answers))
+    return jsonify(status="wrong", correct_answers=list(correct_answers))
 
 
 if __name__ == '__main__':
     db_sess = db_session.create_session()
-    user = User(email="q")
-    user.set_password("q")
-    db_sess.add(user)
-    db_sess.commit()
-
     app.run(port=9999)
