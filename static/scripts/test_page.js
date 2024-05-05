@@ -8,6 +8,7 @@ document.querySelector("#answer-btn").addEventListener('click', (e) => {
     xhr.open("POST", 'http://127.0.0.1:9999/check_answer/');
     xhr.responseType = 'json';
     xhr.setRequestHeader("Content-type", "application/json");
+    xhr.setRequestHeader("Access-Control-Allow-Origin", "*")
     xhr.send(JSON.stringify({ answer: answer }));
     xhr.onload = function () {
         if (xhr.status == 200) {

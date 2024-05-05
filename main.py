@@ -153,13 +153,13 @@ def register():
     form = RegisterForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
-        if db_sess.query(User).filter(User.email == form.email.data).first():
-            form.email.errors.append("Пользователь с этой почтой уже существует")
+        if db_sess.query(User).filter(User.email == form.login.data).first():
+            form.login.errors.append("Пользователь с этой почтой уже существует")
         if form.password.data != form.repeat_password.data:
             form.repeat_password.errors.append("Пароли не совпадают")
         if not db_sess.query(User).filter(
-                User.email == form.email.data).first() and form.password.data == form.repeat_password.data:
-            new_user = User(email=form.email.data)
+                User.email == form.login.data).first() and form.password.data == form.repeat_password.data:
+            new_user = User(email=form.login.data)
             new_user.set_password(form.password.data)
             db_sess.add(new_user)
             db_sess.commit()
@@ -174,9 +174,9 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(User.email == form.email.data).first()
+        user = db_sess.query(User).filter(User.email == form.login.data).first()
         if not user:
-            form.login_email.errors.append("Пользователь не найден")
+            form.login.errors.append("Пользователь не найден")
         elif not user.check_password(form.password.data):
             form.password.errors.append("Неверный пароль")
         else:
@@ -256,8 +256,8 @@ def check_answer():
     return jsonify(status=status, correct_answers=list(correct_answers))
 
 
-@login_required
 @app.route("/test_results/", methods=["GET"])
+@login_required
 def test_results():
     db_sess = db_session.create_session()
     user_tests = db_sess.query(Test).filter(Test.user_id == current_user.id, Test.test_completed != None).all()
